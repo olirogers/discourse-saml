@@ -43,6 +43,7 @@ class SamlAuthenticator < ::Auth::OAuth2Authenticator
     result.name = auth[:info].name || uid
     result.username = uid
     if auth.extra.present? && auth.extra[:raw_info].present?
+      result.name     = auth.extra[:raw_info].attributes['GivenName'].try(:first) || result.name
       result.username = auth.extra[:raw_info].attributes['screenName'].try(:first) || uid
     end
     result.email = auth[:info].email || uid
