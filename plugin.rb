@@ -13,15 +13,20 @@ gem "omniauth-saml", '1.6.0'
 request_method = GlobalSetting.try(:saml_request_method) || 'get'
 
 class SamlAuthenticator < ::Auth::OAuth2Authenticator
+
+  def service_host_name
+    GlobalSetting.try(:saml_host_name) || Discourse.base_url
+  end
+
   def register_middleware(omniauth)
     omniauth.provider :saml,
                       :name => 'saml',
-                      :issuer => Discourse.base_url,
+                      :issuer => service_host_name,
                       :idp_sso_target_url => GlobalSetting.saml_target_url,
                       :idp_cert_fingerprint => GlobalSetting.try(:saml_cert_fingerprint),
                       :idp_cert => GlobalSetting.try(:saml_cert),
                       :attribute_statements => { :nickname => ['screenName'] },
-                      :assertion_consumer_service_url => Discourse.base_url + "/auth/saml/callback",
+                      :assertion_consumer_service_url => service_host_name + "/auth/saml/callback",
                       :custom_url => (GlobalSetting.try(:saml_request_method) == 'post') ? "/discourse_saml" : nil
   end
 
@@ -95,8 +100,8 @@ if request_method == 'post'
 
         settings.compress_request = false
         settings.passive = false
-        settings.issuer = Discourse.base_url
-        settings.assertion_consumer_service_url = Discourse.base_url + "/auth/saml/callback"
+        settings.issuer = service_host_name
+        settings.assertion_consumer_service_url = service_host_name + "/auth/saml/callback"
         settings.name_identifier_format = "urn:oasis:names:tc:SAML:2.0:protocol"
 
         saml_params = authn_request.create_params(settings, {})
